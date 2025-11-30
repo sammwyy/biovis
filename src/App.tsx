@@ -226,7 +226,8 @@ function App() {
 
     return (
         <div
-            className={`flex h-screen w-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-white' : 'bg-neutral-100 text-neutral-900'}`}
+            className={`flex w-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-[#09090b] text-white' : 'bg-neutral-100 text-neutral-900'}`}
+            style={{ height: '100dvh', minHeight: '-webkit-fill-available' }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
         >

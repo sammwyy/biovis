@@ -21,42 +21,49 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
     isDark
 }) => {
     return (
-        <div className={`h-16 border-t flex items-center justify-around px-2 sm:px-4 transition-colors z-30 shrink-0 shadow-lg ${isDark ? 'bg-[#09090b] border-neutral-800' : 'bg-white border-neutral-200'}`}>
+        <div
+            className={`border-t flex items-center justify-around px-2 sm:px-4 transition-colors z-30 shrink-0 shadow-lg ${isDark ? 'bg-[#09090b] border-neutral-800' : 'bg-white border-neutral-200'}`}
+            style={{
+                minHeight: '4rem',
+                paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+                height: 'calc(4rem + env(safe-area-inset-bottom))'
+            }}
+        >
             {structure?.metadata && (
-                <IconButton 
-                    onClick={onMoleculeDetails} 
-                    icon={<FileText size={20} />} 
-                    title="Molecule Details" 
+                <IconButton
+                    onClick={onMoleculeDetails}
+                    icon={<FileText size={20} />}
+                    title="Molecule Details"
                     isDark={isDark}
                     size="lg"
                 />
             )}
-            <IconButton 
-                onClick={onResetCamera} 
-                icon={<RotateCcw size={20} />} 
-                title="Reset View" 
+            <IconButton
+                onClick={onResetCamera}
+                icon={<RotateCcw size={20} />}
+                title="Reset View"
                 isDark={isDark}
                 size="lg"
             />
-            <IconButton 
-                onClick={onScreenshot} 
-                icon={<Camera size={20} />} 
-                title="Capture" 
+            <IconButton
+                onClick={onScreenshot}
+                icon={<Camera size={20} />}
+                title="Capture"
                 isDark={isDark}
                 size="lg"
             />
-            <IconButton 
-                onClick={onExplore} 
-                icon={<Search size={20} />} 
-                title="Explore" 
+            <IconButton
+                onClick={onExplore}
+                icon={<Search size={20} />}
+                title="Explore"
                 isDark={isDark}
                 size="lg"
             />
-            <label 
+            <label
                 className={`p-2.5 rounded-lg cursor-pointer transition-all flex items-center justify-center ${isDark
                     ? 'text-emerald-400 hover:bg-neutral-800 hover:text-emerald-300'
                     : 'text-emerald-600 hover:bg-neutral-100 hover:text-emerald-700'
-                    }`} 
+                    }`}
                 title="Open PDB"
             >
                 <Upload size={20} />

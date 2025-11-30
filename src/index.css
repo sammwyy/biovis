@@ -1,11 +1,26 @@
 @import "tailwindcss";
 
+html {
+    height: 100%;
+    height: -webkit-fill-available;
+}
+
 body {
     margin: 0;
     background-color: #f5f5f5;
     color: #171717;
     overflow: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100%;
+    min-height: -webkit-fill-available;
+    /* Support for safe area insets on mobile */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#root {
+    height: 100%;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
 }
 
 /* Dark mode body styles */
@@ -64,4 +79,20 @@ div[style*="position: fixed"] {
 
 .animate-fade-in {
     animation: fade-in 0.3s ease-in-out;
+}
+
+/* Safe area insets support for mobile */
+@supports (padding: max(0px)) {
+    .pb-safe {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    
+    .pt-safe {
+        padding-top: max(0px, env(safe-area-inset-top));
+    }
+    
+    .px-safe {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+    }
 }
