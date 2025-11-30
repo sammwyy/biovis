@@ -13,6 +13,7 @@ interface Props {
     onAtomClick: (atom: Atom) => void;
     onAtomHover: (atom: Atom | null) => void;
     onScreenshot?: (dataUrl: string) => void;
+    isMobileOrTablet?: boolean;
 }
 
 const CameraController: React.FC<{ structure: Structure | null }> = ({ structure }) => {
@@ -72,7 +73,7 @@ const DataBridge: React.FC = () => {
     return null;
 };
 
-export const Viewer: React.FC<Props> = ({ structure, viewState, annotations, onAtomClick, onAtomHover, onScreenshot }) => {
+export const Viewer: React.FC<Props> = ({ structure, viewState, annotations, onAtomClick, onAtomHover, onScreenshot, isMobileOrTablet = false }) => {
     const isDark = viewState.isDarkMode;
     const bgColor = isDark ? '#09090b' : '#f5f5f5';
 
@@ -84,14 +85,14 @@ export const Viewer: React.FC<Props> = ({ structure, viewState, annotations, onA
 
                 {/* Top Left: Molecule Title & Description */}
                 {structure?.metadata && (
-                    <div className="absolute top-6 left-6 max-w-lg animate-fade-in pointer-events-auto">
+                    <div className={`absolute ${isMobileOrTablet ? 'top-2 left-2 right-2' : 'top-6 left-6'} max-w-lg animate-fade-in pointer-events-auto`}>
                         <div className="flex items-center gap-3 mb-2">
-                            <h1 className={`text-4xl font-extrabold tracking-tight leading-none ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+                            <h1 className={`${isMobileOrTablet ? 'text-xl' : 'text-4xl'} font-extrabold tracking-tight leading-none ${isDark ? 'text-white' : 'text-neutral-900'}`}>
                                 {structure.metadata.title || 'Unknown Structure'}
                             </h1>
                         </div>
 
-                        {structure.metadata.description && (
+                        {structure.metadata.description && !isMobileOrTablet && (
                             <p className={`text-sm leading-relaxed max-w-md ${isDark ? 'text-neutral-400' : 'text-neutral-700'}`}>
                                 {structure.metadata.description}
                             </p>
@@ -105,17 +106,19 @@ export const Viewer: React.FC<Props> = ({ structure, viewState, annotations, onA
                     </div>
                 )}
 
-                {/* Bottom Left: Camera Stats */}
-                <div className={`absolute bottom-4 left-4 font-mono text-[10px] flex flex-col gap-1 transition-opacity duration-500 ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
-                    <div className="flex gap-2">
-                        <span className="font-bold text-emerald-500">POS</span>
-                        <span id="camera-pos-val">X:0 Y:0 Z:0</span>
+                {/* Bottom Left: Camera Stats - Hidden on mobile */}
+                {!isMobileOrTablet && (
+                    <div className={`absolute bottom-4 left-4 font-mono text-[10px] flex flex-col gap-1 transition-opacity duration-500 ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
+                        <div className="flex gap-2">
+                            <span className="font-bold text-emerald-500">POS</span>
+                            <span id="camera-pos-val">X:0 Y:0 Z:0</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <span className="font-bold text-blue-500">ROT</span>
+                            <span id="camera-rot-val">P:0° Y:0°</span>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <span className="font-bold text-blue-500">ROT</span>
-                        <span id="camera-rot-val">P:0° Y:0°</span>
-                    </div>
-                </div>
+                )}
             </div>
 
             <Canvas shadows dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }}>
@@ -130,8 +133,8 @@ export const Viewer: React.FC<Props> = ({ structure, viewState, annotations, onA
                 <directionalLight position={[-10, -10, -10]} intensity={0.4} />
                 <pointLight position={[0, 0, 0]} intensity={0.2} />
 
-                {/* Top Right: Gizmo */}
-                <GizmoHelper alignment="top-right" margin={[80, 80]}>
+                {/* Top Right: Gizmo - Smaller on mobile */}
+                <GizmoHelper alignment="top-right" margin={isMobileOrTablet ? [60, 60] : [80, 80]}>
                     <GizmoViewport
                         axisColors={['#ef4444', '#22c55e', '#3b82f6']}
                         labelColor="white"

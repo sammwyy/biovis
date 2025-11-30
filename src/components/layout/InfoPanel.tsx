@@ -8,9 +8,10 @@ interface Props {
     onClose: () => void;
     onAddAnnotation: (atom: Atom, text: string) => void;
     isDark: boolean;
+    isMobileOrTablet?: boolean;
 }
 
-export const InfoPanel: React.FC<Props> = ({ atom, onClose, onAddAnnotation, isDark }) => {
+export const InfoPanel: React.FC<Props> = ({ atom, onClose, onAddAnnotation, isDark, isMobileOrTablet = false }) => {
     const [annoText, setAnnoText] = useState('');
     const [showAnnoInput, setShowAnnoInput] = useState(false);
 
@@ -30,8 +31,13 @@ export const InfoPanel: React.FC<Props> = ({ atom, onClose, onAddAnnotation, isD
     const valueClass = 'font-mono text-sm';
     const inputClass = isDark ? 'bg-neutral-900 border-neutral-700 text-white placeholder-neutral-600' : 'bg-white border-neutral-300 text-neutral-900 placeholder-neutral-500';
 
+    const positionClass = isMobileOrTablet 
+        ? 'fixed inset-x-4 top-20 bottom-24 max-h-[calc(100vh-8rem)]' 
+        : 'absolute right-6 top-20';
+    const widthClass = isMobileOrTablet ? 'w-auto' : 'w-80';
+
     return (
-        <div className={`absolute right-6 top-20 w-80 backdrop-blur-md border rounded-2xl shadow-2xl p-0 overflow-hidden animate-fade-in z-10 flex flex-col ${cardClass}`}>
+        <div className={`${positionClass} ${widthClass} backdrop-blur-md border rounded-2xl shadow-2xl p-0 overflow-hidden animate-fade-in z-10 flex flex-col ${cardClass}`}>
             <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'border-neutral-800' : 'border-neutral-100'}`}>
                 <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner ${isDark ? 'bg-neutral-800 text-emerald-400' : 'bg-neutral-100 text-emerald-600'}`}>

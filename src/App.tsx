@@ -1,14 +1,18 @@
 import { useState, useCallback, useTransition, useEffect, useRef } from 'react';
-import { Upload, Camera, RotateCcw, Loader2, Search, Atom as AtomIcon, History, Clock } from 'lucide-react';
+import { RotateCcw, Camera, Search, Upload, History, Clock, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Sidebar } from './components/layout/Sidebar';
 import { Viewer } from './components/renderer/Viewer';
 import { InfoPanel } from './components/layout/InfoPanel';
 import { ExploreModal } from './components/layout/ExploreModal';
+import { MoleculeDetailsModal } from './components/layout/MoleculeDetailsModal';
+import { MobileBottomBar, MobileNavbar } from './components/mobile';
+import { IconButton, Button } from './components/ui';
 import { Structure, ViewerState, RenderStyle, Atom, Annotation, PdbMetadata } from './lib/types';
 import { parsePDB } from './lib/pdbParser';
 import { GalleryItem } from './lib/molecules';
+import { useIsMobile, useIsTablet } from './hooks/useMediaQuery';
 
 function App() {
     const [structure, setStructure] = useState<Structure | null>(null);
@@ -17,7 +21,13 @@ function App() {
     const [isExploreOpen, setIsExploreOpen] = useState(false);
     const [history, setHistory] = useState<GalleryItem[]>([]);
     const [showHistory, setShowHistory] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isMoleculeDetailsOpen, setIsMoleculeDetailsOpen] = useState(false);
     const historyRef = useRef<HTMLDivElement>(null);
+
+    const isMobile = useIsMobile();
+    const isTablet = useIsTablet();
+    const isMobileOrTablet = isMobile || isTablet;
 
     const [viewState, setViewState] = useState<ViewerState>({
         renderStyle: RenderStyle.RIBBON,
@@ -220,92 +230,120 @@ function App() {
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
         >
-            <Sidebar structure={structure} viewState={viewState} setViewState={setViewState} />
+            {/* Desktop Sidebar */}
+            {!isMobileOrTablet && (
+                <Sidebar structure={structure} viewState={viewState} setViewState={setViewState} />
+            )}
+
+            {/* Mobile/Tablet Sidebar Drawer */}
+            {isMobileOrTablet && (
+                <Sidebar
+                    structure={structure}
+                    viewState={viewState}
+                    setViewState={setViewState}
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                    isMobile={true}
+                />
+            )}
 
             <div className="flex-1 relative flex flex-col min-w-0">
-                {/* Top Bar */}
-                <div className={`h-16 border-b flex items-center justify-between px-6 transition-colors z-20 relative shrink-0 ${isDark ? 'bg-[#09090b] border-neutral-800' : 'bg-white border-neutral-200'}`}>
-                    <div className={`font-mono text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-700'}`}>
-                        <span className="flex items-center gap-2">
-                            <span className="font-semibold tracking-wide">Viewer</span>
-                            {structure && <span className="opacity-50 mx-2">/</span>}
-                            {structure?.metadata?.id && (
-                                <span className="font-mono">{structure.metadata.id}</span>
-                            )}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-
-                        <ActionButton onClick={resetCamera} icon={<RotateCcw size={16} />} title="Reset View" isDark={isDark} />
-                        <ActionButton onClick={triggerScreenshot} icon={<Camera size={16} />} title="Capture" isDark={isDark} />
-
-                        <div className={`h-6 w-px mx-2 opacity-30 ${isDark ? 'bg-neutral-700' : 'bg-neutral-300'}`}></div>
-
-                        {/* History Dropdown */}
-                        <div className="relative" ref={historyRef}>
-                            <button
-                                onClick={() => setShowHistory(!showHistory)}
-                                className={`p-2.5 rounded-lg border transition-all flex items-center gap-2 ${isDark ? 'bg-neutral-900 border-neutral-800 hover:bg-neutral-800' : 'bg-white border-neutral-200 hover:bg-neutral-50'
-                                    }`}
-                                title="History"
-                            >
-                                <History size={16} className={isDark ? 'text-neutral-400' : 'text-neutral-700'} />
-                                {history.length > 0 && (
-                                    <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                {/* Mobile Navbar */}
+                {isMobileOrTablet ? (
+                    <MobileNavbar
+                        structure={structure}
+                        history={history}
+                        showHistory={showHistory}
+                        onToggleSidebar={() => setIsSidebarOpen(true)}
+                        onToggleHistory={() => setShowHistory(!showHistory)}
+                        onLoadItem={handleLoadItem}
+                        onExplore={() => setIsExploreOpen(true)}
+                        onFileUpload={handleFileUpload}
+                        historyRef={historyRef}
+                        isDark={isDark}
+                    />
+                ) : (
+                    /* Desktop Top Bar */
+                    <div className={`h-16 border-b flex items-center justify-between px-6 transition-colors z-20 relative shrink-0 ${isDark ? 'bg-[#09090b] border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                        <div className={`font-mono text-sm ${isDark ? 'text-neutral-400' : 'text-neutral-700'}`}>
+                            <span className="flex items-center gap-2">
+                                <span className="font-semibold tracking-wide">Viewer</span>
+                                {structure && <span className="opacity-50 mx-2">/</span>}
+                                {structure?.metadata?.id && (
+                                    <span className="font-mono">{structure.metadata.id}</span>
                                 )}
-                            </button>
-
-                            {showHistory && (
-                                <div className={`absolute right-0 top-full mt-2 w-80 rounded-xl shadow-xl border z-50 overflow-hidden ${isDark ? 'bg-[#09090b] border-neutral-800' : 'bg-white border-neutral-200'
-                                    }`}>
-                                    <div className={`p-3 border-b text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${isDark ? 'border-neutral-800 text-neutral-500' : 'border-neutral-200 text-neutral-600'}`}>
-                                        <Clock size={12} /> Recent History
-                                    </div>
-                                    <div className="max-h-80 overflow-y-auto">
-                                        {history.length === 0 ? (
-                                            <div className="p-6 text-center opacity-40 text-sm">No recent items</div>
-                                        ) : (
-                                            history.map((item, idx) => (
-                                                <button
-                                                    key={`${item.id}-${idx}`}
-                                                    onClick={() => handleLoadItem(item)}
-                                                    className={`w-full text-left p-3 flex items-start gap-3 transition-colors ${isDark ? 'hover:bg-neutral-800 border-b border-neutral-900' : 'hover:bg-neutral-50 border-b border-neutral-100'
-                                                        }`}
-                                                >
-                                                    <div className={`shrink-0 w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold font-mono ${isDark ? 'bg-neutral-800 text-emerald-500' : 'bg-neutral-200 text-emerald-600'
-                                                        }`}>
-                                                        {item.id}
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium leading-none mb-1">{item.title}</div>
-                                                        <div className="text-[10px] opacity-50 truncate w-48">{item.category}</div>
-                                                    </div>
-                                                </button>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                            </span>
                         </div>
 
-                        <button
-                            onClick={() => setIsExploreOpen(true)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${isDark
-                                ? 'bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700'
-                                : 'bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200'
-                                }`}
-                        >
-                            <Search size={16} /> Explore
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <IconButton onClick={resetCamera} icon={<RotateCcw size={16} />} title="Reset View" isDark={isDark} />
+                            <IconButton onClick={triggerScreenshot} icon={<Camera size={16} />} title="Capture" isDark={isDark} />
+                            <div className={`h-6 w-px mx-2 opacity-30 ${isDark ? 'bg-neutral-700' : 'bg-neutral-300'}`}></div>
 
-                        <label className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-all shadow-lg shadow-emerald-900/20 text-sm font-medium ml-2">
-                            <Upload size={16} />
-                            <span>Open PDB</span>
-                            <input type="file" accept=".pdb,.ent" onChange={handleFileUpload} className="hidden" />
-                        </label>
+                            {/* History Dropdown */}
+                            <div className="relative" ref={historyRef}>
+                                <IconButton
+                                    onClick={() => setShowHistory(!showHistory)}
+                                    icon={
+                                        <>
+                                            <History size={16} className={isDark ? 'text-neutral-400' : 'text-neutral-700'} />
+                                            {history.length > 0 && (
+                                                <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                            )}
+                                        </>
+                                    }
+                                    title="History"
+                                    isDark={isDark}
+                                    variant="secondary"
+                                />
+
+                                {showHistory && (
+                                    <div className={`absolute right-0 top-full mt-2 w-80 rounded-xl shadow-xl border z-50 overflow-hidden ${isDark ? 'bg-[#09090b] border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                                        <div className={`p-3 border-b text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${isDark ? 'border-neutral-800 text-neutral-500' : 'border-neutral-200 text-neutral-600'}`}>
+                                            <Clock size={12} /> Recent History
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto">
+                                            {history.length === 0 ? (
+                                                <div className="p-6 text-center opacity-40 text-sm">No recent items</div>
+                                            ) : (
+                                                history.map((item, idx) => (
+                                                    <button
+                                                        key={`${item.id}-${idx}`}
+                                                        onClick={() => handleLoadItem(item)}
+                                                        className={`w-full text-left p-3 flex items-start gap-3 transition-colors ${isDark ? 'hover:bg-neutral-800 border-b border-neutral-900' : 'hover:bg-neutral-50 border-b border-neutral-100'}`}
+                                                    >
+                                                        <div className={`shrink-0 w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold font-mono ${isDark ? 'bg-neutral-800 text-emerald-500' : 'bg-neutral-200 text-emerald-600'}`}>
+                                                            {item.id}
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-medium leading-none mb-1">{item.title}</div>
+                                                            <div className="text-[10px] opacity-50 truncate w-48">{item.category}</div>
+                                                        </div>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <Button
+                                onClick={() => setIsExploreOpen(true)}
+                                variant="secondary"
+                                isDark={isDark}
+                            >
+                                <Search size={16} className="mr-2" />
+                                Explore
+                            </Button>
+
+                            <label className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-all shadow-lg shadow-emerald-900/20 text-sm font-medium ml-2">
+                                <Upload size={16} />
+                                <span>Open PDB</span>
+                                <input type="file" accept=".pdb,.ent" onChange={handleFileUpload} className="hidden" />
+                            </label>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* 3D Content */}
                 <div className="flex-1 relative z-0">
@@ -323,6 +361,7 @@ function App() {
                         onAtomClick={handleAtomClick}
                         onAtomHover={handleAtomHover}
                         onScreenshot={handleScreenshotCapture}
+                        isMobileOrTablet={isMobileOrTablet}
                     />
 
                     <InfoPanel
@@ -330,8 +369,22 @@ function App() {
                         onClose={() => setViewState(prev => ({ ...prev, selectedAtom: null }))}
                         onAddAnnotation={addAnnotation}
                         isDark={isDark}
+                        isMobileOrTablet={isMobileOrTablet}
                     />
                 </div>
+
+                {/* Mobile/Tablet Bottom Bar */}
+                {isMobileOrTablet && (
+                    <MobileBottomBar
+                        structure={structure}
+                        onMoleculeDetails={() => setIsMoleculeDetailsOpen(true)}
+                        onResetCamera={resetCamera}
+                        onScreenshot={triggerScreenshot}
+                        onExplore={() => setIsExploreOpen(true)}
+                        onFileUpload={handleFileUpload}
+                        isDark={isDark}
+                    />
+                )}
             </div>
 
             <ExploreModal
@@ -341,22 +394,16 @@ function App() {
                 history={history}
                 isDark={isDark}
             />
+
+            <MoleculeDetailsModal
+                isOpen={isMoleculeDetailsOpen}
+                onClose={() => setIsMoleculeDetailsOpen(false)}
+                structure={structure}
+                isDark={isDark}
+            />
         </div>
     );
 }
-
-const ActionButton = ({ onClick, icon, title, isDark }: any) => (
-    <button
-        onClick={onClick}
-        className={`p-2 rounded-lg transition-all ${isDark
-            ? 'text-neutral-400 hover:bg-neutral-800 hover:text-white'
-            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            }`}
-        title={title}
-    >
-        {icon}
-    </button>
-);
 
 export default App;
 
