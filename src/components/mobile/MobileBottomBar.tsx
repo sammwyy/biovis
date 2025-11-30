@@ -64,10 +64,10 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     ? 'text-emerald-400 hover:bg-neutral-800 hover:text-emerald-300'
                     : 'text-emerald-600 hover:bg-neutral-100 hover:text-emerald-700'
                     }`}
-                title="Open PDB"
+                title="Open File"
             >
                 <Upload size={20} />
-                <input type="file" accept=".pdb,.ent" onChange={onFileUpload} className="hidden" />
+                <input type="file" accept=".pdb,.ent,.cif,.mmtf,.sdf,.mol2,.gro,.xtc,.trr,.dcd,.mrc,.ccp4" onChange={onFileUpload} className="hidden" />
             </label>
         </div>
     );

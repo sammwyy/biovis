@@ -1,6 +1,8 @@
-import { Layers, Eye, EyeOff, Activity, Droplet, Box, Type, Sun, Moon, Atom, Github, X, FileText, Tag } from 'lucide-react';
+import { Layers, Eye, EyeOff, Activity, Droplet, Box, Type, Sun, Moon, Atom, Github, X, FileText, Tag, Palette, Play, RotateCw, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 
-import { ViewerState, Structure } from '@/lib/types';
+import { ViewerState, Structure, RenderStyle, AnimationMode } from '@/lib/types';
+import { Select } from '@/components/ui';
 
 interface Props {
     structure: Structure | null;
@@ -15,7 +17,51 @@ export const Sidebar: React.FC<Props> = ({ structure, viewState, setViewState, i
     const isDark = viewState.isDarkMode;
 
     const toggle = (key: keyof ViewerState) => {
-        setViewState(prev => ({ ...prev, [key]: !prev[key] }));
+        setViewState(prev => {
+            const newState = { ...prev, [key]: !prev[key] };
+            // Save to localStorage
+            if (key === 'playTrajectory' || key === 'showStars') {
+                try {
+                    const current = localStorage.getItem('biovis_preferences');
+                    const prefs = current ? JSON.parse(current) : {};
+                    prefs[key] = newState[key];
+                    localStorage.setItem('biovis_preferences', JSON.stringify(prefs));
+                } catch (e) {
+                    console.error("Failed to save preference", e);
+                }
+            }
+            return newState;
+        });
+    };
+
+    const handleRenderStyleChange = (style: RenderStyle) => {
+        setViewState(prev => {
+            const newState = { ...prev, renderStyle: style };
+            try {
+                const current = localStorage.getItem('biovis_preferences');
+                const prefs = current ? JSON.parse(current) : {};
+                prefs.renderStyle = style;
+                localStorage.setItem('biovis_preferences', JSON.stringify(prefs));
+            } catch (e) {
+                console.error("Failed to save preference", e);
+            }
+            return newState;
+        });
+    };
+
+    const handleAnimationModeChange = (mode: AnimationMode) => {
+        setViewState(prev => {
+            const newState = { ...prev, animationMode: mode };
+            try {
+                const current = localStorage.getItem('biovis_preferences');
+                const prefs = current ? JSON.parse(current) : {};
+                prefs.animationMode = mode;
+                localStorage.setItem('biovis_preferences', JSON.stringify(prefs));
+            } catch (e) {
+                console.error("Failed to save preference", e);
+            }
+            return newState;
+        });
     };
 
     const bgClass = isDark ? 'bg-[#09090b] border-neutral-800 text-neutral-400' : 'bg-white border-neutral-200 text-neutral-700';
@@ -60,6 +106,74 @@ export const Sidebar: React.FC<Props> = ({ structure, viewState, setViewState, i
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-5 space-y-8 scrollbar-thin">
+                        {/* Atom Representation */}
+                        <div>
+                            <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                                <Palette size={12} /> Atom Representation
+                            </h2>
+                            <Select
+                                value={viewState.renderStyle}
+                                onChange={(e) => handleRenderStyleChange(e.target.value as RenderStyle)}
+                                isDark={isDark}
+                                options={Object.values(RenderStyle).map(style => ({ value: style, label: style }))}
+                                className="w-full"
+                            />
+                        </div>
+
+                        {/* Animation */}
+                        <div>
+                            <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                                <RotateCw size={12} /> Animation
+                            </h2>
+                            <Select
+                                value={viewState.animationMode}
+                                onChange={(e) => handleAnimationModeChange(e.target.value as AnimationMode)}
+                                isDark={isDark}
+                                options={Object.values(AnimationMode).map(mode => ({ value: mode, label: mode }))}
+                                className="w-full"
+                            />
+                        </div>
+
+                        {/* Trajectory */}
+                        <div>
+                            <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                                <Play size={12} /> Trajectory
+                            </h2>
+                            <label className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer ${
+                                viewState.playTrajectory
+                                    ? (isDark ? 'bg-neutral-800' : 'bg-neutral-100')
+                                    : (isDark ? 'hover:bg-neutral-800/50' : 'hover:bg-neutral-50')
+                            }`}>
+                                <input
+                                    type="checkbox"
+                                    checked={viewState.playTrajectory}
+                                    onChange={(e) => toggle('playTrajectory')}
+                                    className="w-4 h-4 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm font-medium">Play trajectory</span>
+                            </label>
+                        </div>
+
+                        {/* Stars */}
+                        <div>
+                            <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                                <Sparkles size={12} /> Background
+                            </h2>
+                            <label className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer ${
+                                viewState.showStars
+                                    ? (isDark ? 'bg-neutral-800' : 'bg-neutral-100')
+                                    : (isDark ? 'hover:bg-neutral-800/50' : 'hover:bg-neutral-50')
+                            }`}>
+                                <input
+                                    type="checkbox"
+                                    checked={viewState.showStars}
+                                    onChange={(e) => toggle('showStars')}
+                                    className="w-4 h-4 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm font-medium">Show stars</span>
+                            </label>
+                        </div>
+
                         {/* Visibility Layers */}
                         <div>
                             <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
@@ -212,6 +326,74 @@ export const Sidebar: React.FC<Props> = ({ structure, viewState, setViewState, i
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* Atom Representation */}
+                <div>
+                    <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                        <Palette size={12} /> Atom Representation
+                    </h2>
+                    <Select
+                        value={viewState.renderStyle}
+                        onChange={(e) => handleRenderStyleChange(e.target.value as RenderStyle)}
+                        isDark={isDark}
+                        options={Object.values(RenderStyle).map(style => ({ value: style, label: style }))}
+                        className="w-full"
+                    />
+                </div>
+
+                {/* Animation */}
+                <div>
+                    <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                        <RotateCw size={12} /> Animation
+                    </h2>
+                    <Select
+                        value={viewState.animationMode}
+                        onChange={(e) => handleAnimationModeChange(e.target.value as AnimationMode)}
+                        isDark={isDark}
+                        options={Object.values(AnimationMode).map(mode => ({ value: mode, label: mode }))}
+                        className="w-full"
+                    />
+                </div>
+
+                {/* Trajectory */}
+                <div>
+                    <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                        <Play size={12} /> Trajectory
+                    </h2>
+                    <label className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer ${
+                        viewState.playTrajectory
+                            ? (isDark ? 'bg-neutral-800' : 'bg-neutral-100')
+                            : (isDark ? 'hover:bg-neutral-800/50' : 'hover:bg-neutral-50')
+                    }`}>
+                        <input
+                            type="checkbox"
+                            checked={viewState.playTrajectory}
+                            onChange={() => toggle('playTrajectory')}
+                            className="w-4 h-4 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium">Play trajectory</span>
+                    </label>
+                </div>
+
+                {/* Stars */}
+                <div>
+                    <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
+                        <Sparkles size={12} /> Background
+                    </h2>
+                    <label className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer ${
+                        viewState.showStars
+                            ? (isDark ? 'bg-neutral-800' : 'bg-neutral-100')
+                            : (isDark ? 'hover:bg-neutral-800/50' : 'hover:bg-neutral-50')
+                    }`}>
+                        <input
+                            type="checkbox"
+                            checked={viewState.showStars}
+                            onChange={() => toggle('showStars')}
+                            className="w-4 h-4 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium">Show stars</span>
+                    </label>
                 </div>
 
                 {/* Visibility Layers */}

@@ -4,7 +4,7 @@ import { OrbitControls, PerspectiveCamera, Stars, Html, Stats, GizmoHelper, Gizm
 import * as THREE from 'three';
 
 import { MoleculeRender } from './MoleculeRender';
-import { Structure, ViewerState, Atom, Annotation } from '@/lib/types';
+import { Structure, ViewerState, Atom, Annotation, AnimationMode } from '@/lib/types';
 
 interface Props {
     structure: Structure | null;
@@ -24,8 +24,9 @@ const CameraController: React.FC<{ structure: Structure | null }> = ({ structure
         if (structure && controlsRef.current) {
             const center = structure.center;
             const size = Math.max(structure.size.x, structure.size.y, structure.size.z);
-            const distance = size * 2.0;
+            const distance = size * 2.5; // Increased distance to center molecule better
 
+            // Position camera relative to center
             camera.position.set(center.x, center.y, center.z + distance);
             camera.lookAt(center);
             controlsRef.current.target.copy(center);
@@ -70,6 +71,24 @@ const DataBridge: React.FC = () => {
         }
     });
 
+    return null;
+};
+
+const RotationController: React.FC<{ animationMode: AnimationMode, structure: Structure | null }> = ({ animationMode, structure }) => {
+    const { camera, controls } = useThree();
+    const rotationSpeed = animationMode === AnimationMode.FAST_ROTATION ? 0.01 : 
+                          animationMode === AnimationMode.SLOW_ROTATION ? 0.002 : 0;
+    
+    useFrame(() => {
+        if (rotationSpeed > 0 && structure && controls) {
+            const center = structure.center;
+            const axis = new THREE.Vector3(0, 1, 0);
+            camera.position.sub(center).applyAxisAngle(axis, rotationSpeed).add(center);
+            (controls as any).target.copy(center);
+            camera.lookAt(center);
+        }
+    });
+    
     return null;
 };
 
@@ -142,7 +161,19 @@ export const Viewer: React.FC<Props> = ({ structure, viewState, annotations, onA
                     />
                 </GizmoHelper>
 
-                {isDark && <Stars radius={100} depth={50} count={1000} factor={4} saturation={0} fade speed={0.5} />}
+                {isDark && viewState.showStars && structure && (
+                    <group position={[structure.center.x, structure.center.y, structure.center.z]}>
+                        <Stars 
+                            radius={Math.max(structure.size.x, structure.size.y, structure.size.z) * 3} 
+                            depth={Math.max(structure.size.x, structure.size.y, structure.size.z) * 1.5} 
+                            count={1000} 
+                            factor={4} 
+                            saturation={0} 
+                            fade 
+                            speed={0.5}
+                        />
+                    </group>
+                )}
 
                 <Suspense fallback={<Html center><div className={isDark ? "text-neutral-400 font-mono text-sm" : "text-neutral-600 font-mono text-sm"}>Building Geometry...</div></Html>}>
                     {structure && (
@@ -154,6 +185,7 @@ export const Viewer: React.FC<Props> = ({ structure, viewState, annotations, onA
                                 onAtomHover={onAtomHover}
                             />
                             <CameraController structure={structure} />
+                            <RotationController animationMode={viewState.animationMode} structure={structure} />
                             <DataBridge />
                         </>
                     )}

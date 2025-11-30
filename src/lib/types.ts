@@ -1,7 +1,21 @@
 import { Vector3 } from 'three';
 
 export enum RenderStyle {
-    RIBBON = 'Ribbon'
+    SPHERES_CPK = 'Spheres (CPK)',
+    STICK = 'Stick',
+    BALL_STICK = 'Ball & Stick',
+    RIBBON = 'Ribbon / Cartoon',
+    LINE = 'Line',
+    SURFACE = 'Surface',
+    HYPERBALL = 'Hyperball',
+    VDW_SURFACE = 'Van der Waals surface',
+    BACKBONE_TRACE = 'Backbone trace'
+}
+
+export enum AnimationMode {
+    STATIC = 'Static',
+    SLOW_ROTATION = 'Slow rotation',
+    FAST_ROTATION = 'Fast rotation'
 }
 
 export enum ElementType {
@@ -77,6 +91,9 @@ export interface Annotation {
 
 export interface ViewerState {
     renderStyle: RenderStyle;
+    animationMode: AnimationMode;
+    playTrajectory: boolean;
+    showStars: boolean;
     showWater: boolean;
     showLigands: boolean;
     showProtein: boolean;

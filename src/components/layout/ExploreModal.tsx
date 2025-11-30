@@ -134,6 +134,7 @@ export const ExploreModal: React.FC<Props> = ({ isOpen, onClose, onSelect, isDar
 
         try {
             // Create a temporary GalleryItem for the PDB ID
+            // The URL doesn't matter since handleLoadItem will try multiple formats
             const tempItem: GalleryItem = {
                 id: pdbId,
                 title: pdbId,
@@ -144,12 +145,13 @@ export const ExploreModal: React.FC<Props> = ({ isOpen, onClose, onSelect, isDar
             };
 
             // Call onSelect which will handle the loading in App.tsx
+            // It will automatically try PDB, CIF, and other formats
             onSelect(tempItem);
             setPdbIdInput('');
             onClose();
         } catch (error) {
-            console.error('Error loading PDB:', error);
-            setPdbError('Failed to load PDB. Please check the ID and try again.');
+            console.error('Error loading structure:', error);
+            setPdbError('Failed to load structure. Please check the ID and try again.');
         } finally {
             setIsLoadingPdb(false);
         }

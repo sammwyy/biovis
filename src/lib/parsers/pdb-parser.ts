@@ -1,6 +1,6 @@
 import { Vector3 } from 'three';
 
-import { Atom, Bond, Chain, ElementType, Residue, Structure, PdbMetadata } from './types';
+import { Atom, Bond, Chain, ElementType, Residue, Structure, PdbMetadata } from '../types';
 
 export const parsePDB = (content: string): Structure => {
     const lines = content.split('\n');

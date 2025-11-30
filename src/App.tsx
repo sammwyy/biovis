@@ -9,8 +9,8 @@ import { ExploreModal } from './components/layout/ExploreModal';
 import { MoleculeDetailsModal } from './components/layout/MoleculeDetailsModal';
 import { MobileBottomBar, MobileNavbar } from './components/mobile';
 import { IconButton, Button } from './components/ui';
-import { Structure, ViewerState, RenderStyle, Atom, Annotation, PdbMetadata } from './lib/types';
-import { parsePDB } from './lib/pdbParser';
+import { Structure, ViewerState, RenderStyle, AnimationMode, Atom, Annotation, PdbMetadata } from './lib/types';
+import { parseStructureFile, loadStructureById } from './lib/fileParsers';
 import { GalleryItem } from './lib/molecules';
 import { useIsMobile, useIsTablet } from './hooks/useMediaQuery';
 
@@ -31,6 +31,9 @@ function App() {
 
     const [viewState, setViewState] = useState<ViewerState>({
         renderStyle: RenderStyle.RIBBON,
+        animationMode: AnimationMode.SLOW_ROTATION,
+        playTrajectory: true,
+        showStars: true,
         showWater: false,
         showLigands: true,
         showProtein: true,
@@ -43,7 +46,43 @@ function App() {
 
     const [isLoading, setIsLoading] = useState(false);
 
-    // Initial load of history
+    // Load user preferences from localStorage
+    const loadPreferences = (): Partial<ViewerState> => {
+        try {
+            const saved = localStorage.getItem('biovis_preferences');
+            if (saved) {
+                const prefs = JSON.parse(saved);
+                return {
+                    renderStyle: prefs.renderStyle || RenderStyle.RIBBON,
+                    animationMode: prefs.animationMode || AnimationMode.SLOW_ROTATION,
+                    playTrajectory: prefs.playTrajectory !== undefined ? prefs.playTrajectory : true,
+                    showStars: prefs.showStars !== undefined ? prefs.showStars : true,
+                };
+            }
+        } catch (e) {
+            console.error("Failed to load preferences", e);
+        }
+        return {
+            renderStyle: RenderStyle.RIBBON,
+            animationMode: AnimationMode.SLOW_ROTATION,
+            playTrajectory: true,
+            showStars: true,
+        };
+    };
+
+    // Save preferences to localStorage
+    const savePreferences = (updates: Partial<ViewerState>) => {
+        try {
+            const current = localStorage.getItem('biovis_preferences');
+            const prefs = current ? JSON.parse(current) : {};
+            const newPrefs = { ...prefs, ...updates };
+            localStorage.setItem('biovis_preferences', JSON.stringify(newPrefs));
+        } catch (e) {
+            console.error("Failed to save preferences", e);
+        }
+    };
+
+    // Initial load of history and preferences
     useEffect(() => {
         try {
             const saved = localStorage.getItem('biovis_history');
@@ -53,6 +92,10 @@ function App() {
         } catch (e) {
             console.error("Failed to load history", e);
         }
+
+        // Load preferences and update viewState
+        const prefs = loadPreferences();
+        setViewState(prev => ({ ...prev, ...prefs }));
 
         const handleClickOutside = (event: MouseEvent) => {
             if (historyRef.current && !historyRef.current.contains(event.target as Node)) {
@@ -75,19 +118,17 @@ function App() {
         });
     };
 
-    const processPdbText = (text: string, options: { filename?: string, meta?: Partial<PdbMetadata> } = {}) => {
+    const processStructureFile = (text: string, filename: string, options: { meta?: Partial<PdbMetadata> } = {}) => {
         try {
-            const parsed = parsePDB(text);
+            const parsed = parseStructureFile(text, filename);
 
             // If loaded from file, use filename as title, and original title as description
-            if (options.filename) {
-                const originalTitle = parsed.metadata?.title;
-                parsed.metadata = {
-                    ...parsed.metadata,
-                    title: options.filename,
-                    description: originalTitle
-                };
-            }
+            const originalTitle = parsed.metadata?.title;
+            parsed.metadata = {
+                ...parsed.metadata,
+                title: filename,
+                description: originalTitle
+            };
 
             // Merge extra metadata (from Gallery) if available
             if (options.meta && parsed.metadata) {
@@ -107,9 +148,9 @@ function App() {
                 renderStyle: RenderStyle.RIBBON
             }));
             setAnnotations([]);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to parse file", err);
-            alert("Error parsing PDB file.");
+            alert(err.message || "Error parsing structure file.");
         }
     };
 
@@ -122,8 +163,12 @@ function App() {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const text = e.target?.result as string;
-                processPdbText(text, { filename: file.name });
+                processStructureFile(text, file.name);
                 setIsLoading(false);
+            };
+            reader.onerror = () => {
+                setIsLoading(false);
+                alert("Error reading file.");
             };
             reader.readAsText(file);
         }, 100);
@@ -137,22 +182,52 @@ function App() {
         addToHistory(item);
 
         try {
-            const response = await fetch(item.url);
-            if (!response.ok) throw new Error("Failed to fetch PDB");
-            const text = await response.text();
+            // Check if URL is from RCSB PDB (can try multiple formats)
+            const isRcsbUrl = item.url.includes('files.rcsb.org/download/');
 
-            // Pass gallery item details as metadata overrides
-            processPdbText(text, {
-                meta: {
-                    title: item.title,
-                    description: item.description,
-                    tags: item.tags,
-                    classification: item.category
-                }
-            });
-        } catch (e) {
+            if (isRcsbUrl) {
+                // Extract PDB ID from URL and try multiple formats
+                const pdbId = item.id;
+                const { structure, filename } = await loadStructureById(pdbId);
+
+                // Set structure directly with metadata overrides
+                setStructure({
+                    ...structure,
+                    metadata: {
+                        ...structure.metadata,
+                        title: item.title,
+                        description: item.description,
+                        tags: item.tags,
+                        classification: item.category,
+                        id: pdbId
+                    }
+                });
+                setViewState(prev => ({
+                    ...prev,
+                    selectedAtom: null,
+                    hoveredAtom: null
+                    // Keep user's renderStyle preference
+                }));
+                setAnnotations([]);
+            } else {
+                // Use original URL (for non-RCSB sources)
+                const response = await fetch(item.url);
+                if (!response.ok) throw new Error("Failed to fetch structure");
+                const text = await response.text();
+
+                // Pass gallery item details as metadata overrides
+                processStructureFile(text, item.id + '.pdb', {
+                    meta: {
+                        title: item.title,
+                        description: item.description,
+                        tags: item.tags,
+                        classification: item.category
+                    }
+                });
+            }
+        } catch (e: any) {
             console.error(e);
-            alert("Could not load molecule from database.");
+            alert(e.message || "Could not load molecule from database.");
         } finally {
             setIsLoading(false);
         }
@@ -167,8 +242,12 @@ function App() {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const text = e.target?.result as string;
-                    processPdbText(text, { filename: file.name });
+                    processStructureFile(text, file.name);
                     setIsLoading(false);
+                };
+                reader.onerror = () => {
+                    setIsLoading(false);
+                    alert("Error reading file.");
                 };
                 reader.readAsText(file);
             }, 100);
@@ -339,8 +418,8 @@ function App() {
 
                             <label className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-all shadow-lg shadow-emerald-900/20 text-sm font-medium ml-2">
                                 <Upload size={16} />
-                                <span>Open PDB</span>
-                                <input type="file" accept=".pdb,.ent" onChange={handleFileUpload} className="hidden" />
+                                <span>Open File</span>
+                                <input type="file" accept=".pdb,.ent,.cif,.mmtf,.sdf,.mol2,.gro,.xtc,.trr,.dcd,.mrc,.ccp4" onChange={handleFileUpload} className="hidden" />
                             </label>
                         </div>
                     </div>
