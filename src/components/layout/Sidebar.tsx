@@ -1,4 +1,4 @@
-import { Layers, Eye, EyeOff, Activity, Droplet, Box, Type, Sun, Moon, Atom, Github, X } from 'lucide-react';
+import { Layers, Eye, EyeOff, Activity, Droplet, Box, Type, Sun, Moon, Atom, Github, X, FileText, Tag } from 'lucide-react';
 
 import { ViewerState, Structure } from '@/lib/types';
 
@@ -136,6 +136,84 @@ export const Sidebar: React.FC<Props> = ({ structure, viewState, setViewState, i
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-8 scrollbar-thin">
+                {/* Molecule Details Card */}
+                <div className="space-y-4">
+                    <h2 className={`text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2 ${sectionTitleClass}`}>
+                        <FileText size={12} /> Molecule Details
+                    </h2>
+                    {structure?.metadata ? (
+                        <div className={`p-4 rounded-xl border text-xs leading-relaxed space-y-4 ${isDark ? 'bg-neutral-900/30 border-neutral-800' : 'bg-neutral-50/80 border-neutral-200 text-neutral-800'}`}>
+                            {/* ID and Category */}
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <span className="opacity-50 block mb-1">PDB ID</span>
+                                    <div className={`font-mono text-base font-bold tracking-widest px-2 py-0.5 rounded w-fit ${isDark ? 'bg-neutral-800 text-emerald-400' : 'bg-white text-emerald-600 border border-neutral-200'}`}>
+                                        {structure.metadata.id || 'N/A'}
+                                    </div>
+                                </div>
+                                {structure.metadata.classification && (
+                                    <div className="text-right max-w-[50%]">
+                                        <span className="opacity-50 block mb-1">Category</span>
+                                        <span className="font-medium block break-words">{structure.metadata.classification}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Name */}
+                            {structure.metadata.title && (
+                                <div className="pt-2 border-t border-dashed border-opacity-10 border-current">
+                                    <span className="opacity-50 block mb-1">Name</span>
+                                    <span className="font-bold text-sm block leading-snug">{structure.metadata.title}</span>
+                                </div>
+                            )}
+
+                            {/* Tags */}
+                            {structure.metadata.tags && structure.metadata.tags.length > 0 && (
+                                <div className="pt-2 border-t border-dashed border-opacity-10 border-current">
+                                    <span className="opacity-50 block mb-2 flex items-center gap-1"><Tag size={10} /> Tags</span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {structure.metadata.tags.map(tag => (
+                                            <span key={tag} className={`px-1.5 py-0.5 rounded-[4px] text-[10px] uppercase font-bold tracking-wide ${isDark ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-200 text-neutral-700'}`}>
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Technical Stats */}
+                            <div className="pt-2 border-t border-dashed border-opacity-10 border-current space-y-2">
+                                {structure.metadata.resolution && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="opacity-50">Resolution</span>
+                                        <span className="font-mono">{structure.metadata.resolution.toFixed(2)} Å</span>
+                                    </div>
+                                )}
+                                {structure.metadata.depositionDate && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="opacity-50">Date</span>
+                                        <span className="font-mono">{structure.metadata.depositionDate}</span>
+                                    </div>
+                                )}
+                                {structure.metadata.experimentMethod && (
+                                    <div className="block pt-1">
+                                        <span className="opacity-50 block mb-1">Method</span>
+                                        <span className="font-medium opacity-80">{structure.metadata.experimentMethod}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className={`p-4 rounded-xl border text-xs leading-relaxed ${isDark ? 'bg-neutral-900/30 border-neutral-800' : 'bg-neutral-50/80 border-neutral-200 text-neutral-800'}`}>
+                            <div className={`text-center py-4 ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}>
+                                <FileText size={24} className="mx-auto mb-2 opacity-40" />
+                                <p className="text-xs">No molecule loaded</p>
+                                <p className="text-[10px] mt-1 opacity-60">Load a PDB file to see details</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Visibility Layers */}
                 <div>
                     <h2 className={`text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${sectionTitleClass}`}>
