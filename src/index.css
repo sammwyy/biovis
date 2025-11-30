@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+body {
+    margin: 0;
+    background-color: #f5f5f5;
+    color: #171717;
+    overflow: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode body styles */
+body.dark {
+    background-color: #09090b;
+    color: #f3f4f6;
+}
+
+/* Custom scrollbar for light theme */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #e5e5e5;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #a3a3a3;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #737373;
+}
+
+/* Dark mode scrollbar */
+body.dark ::-webkit-scrollbar-track {
+    background: #18181b;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+}
+
+body.dark ::-webkit-scrollbar-thumb:hover {
+    background: #52525b;
+}
+
+/* Stats panel fix */
+div[style*="position: fixed"] {
+    z-index: 5 !important;
+}
+
+/* Custom animations */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-in-out;
+}
